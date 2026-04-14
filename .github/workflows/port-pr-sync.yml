@@ -39,3 +39,13 @@ jobs:
                 \"service\": \"shipment\"
               }
             }"
+
+      - name: Trigger Port AI PR Review
+        run: |
+          curl -s -X POST \
+            "https://api.getport.io/v1/agent/pr-review-summarizer/invoke" \
+            -H "Authorization: Bearer ${{ steps.token.outputs.token }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"prompt\": \"Analyze this pull request and generate a review summary:\n\nPR ID: ${{ github.event.pull_request.id }}\nPR Title: ${{ github.event.pull_request.title }}\nBranch: ${{ github.head_ref }}\nStatus: open\nLink: ${{ github.event.pull_request.html_url }}\nLinked Service: shipment\nRepository: ${{ github.event.repository.name }}\n\nPlease fetch the full entity details, check the service scorecard and incidents, then write a complete AI review summary and risk level back to this PR entity.\"
+            }"
