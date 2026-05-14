@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why this CI run was triggered'
+        required: false
+        default: 'Manual trigger from Port'
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Echo trigger reason
+        run: |
+          echo "CI triggered."
+          echo "Reason: ${{ github.event.inputs.reason || 'push or PR' }}"
+          echo "Event: ${{ github.event_name }}"
+          echo "Actor: ${{ github.actor }}"
+
+      - name: Simulated build
+        run: |
+          echo "Building..."
+          sleep 3
+          echo "Build complete"
+
+      - name: Simulated tests
+        run: |
+          echo "Running tests..."
+          sleep 2
+          echo "All tests passed"
+
+      - name: Done
+        run: echo "CI succeeded"
