@@ -26,12 +26,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Log inputs
-        run: |
-          echo "Environment: ${{ github.event.inputs.environment }}"
-          echo "Reason: ${{ github.event.inputs.reason }}"
-          echo "Triggered by: ${{ github.actor }}"
-          echo "Commit: ${{ github.sha }}"
+      - name: Capture start time
+        id: starttime
+        run: echo "epoch=$(date +%s)" >> $GITHUB_OUTPUT
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
@@ -63,7 +60,51 @@ jobs:
           echo "deploy_url=$URL" >> $GITHUB_OUTPUT
           echo "🚀 Deployed to: $URL"
 
+      - name: Get Port API token
+        if: always()
+        id: port_auth
+        run: |
+          TOKEN=$(curl -s -X POST https://api.port.io/v1/auth/access_token \
+            -H "Content-Type: application/json" \
+            -d "{\"clientId\":\"${{ secrets.PORT_CLIENT_ID }}\",\"clientSecret\":\"${{ secrets.PORT_CLIENT_SECRET }}\"}" \
+            | jq -r .accessToken)
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Write deployment to Port
+        if: always()
+        run: |
+          DURATION=$(( $(date +%s) - ${{ steps.starttime.outputs.epoch }} ))
+          STATUS="${{ job.status == 'success' && 'success' || 'failed' }}"
+          DEPLOYED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+          curl -s -X POST "https://api.port.io/v1/blueprints/deployment/entities?upsert=true" \
+            -H "Authorization: Bearer ${{ steps.port_auth.outputs.token }}" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "identifier": "deploy_${{ github.run_id }}",
+            "title": "Deploy ${{ github.event.inputs.environment }} #${{ github.run_number }}",
+            "properties": {
+              "environment": "${{ github.event.inputs.environment }}",
+              "status": "$STATUS",
+              "deploy_url": "${{ steps.deploy.outputs.deploy_url }}",
+              "commit_sha": "${{ github.sha }}",
+              "actor": "${{ github.actor }}",
+              "reason": "${{ github.event.inputs.reason }}",
+              "deployed_at": "$DEPLOYED_AT",
+              "duration_seconds": $DURATION,
+              "workflow_run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            },
+            "relations": {
+              "service": "shipment",
+              "repository": "fask-app-example"
+            }
+          }
+          EOF
+
       - name: Summary
+        if: always()
         run: |
           echo "## ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -72,3 +113,4 @@ jobs:
           echo "**Reason:** ${{ github.event.inputs.reason }}" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Port catalog:** deploy_${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
