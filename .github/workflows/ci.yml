@@ -18,9 +18,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Simulate failure
-        run: exit 1
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -37,11 +34,13 @@ jobs:
           sleep 3
           echo "Build complete"
 
-      - name: Simulated tests
+      - name: Run unit tests
         run: |
-          echo "Running tests..."
-          sleep 2
-          echo "All tests passed"
+          echo "Running unit tests..."
+          echo "FAILED tests/test_app.py::test_home_route - AssertionError: expected 200 got 500"
+          echo "FAILED tests/test_app.py::test_create_user - TypeError: argument of type NoneType is not iterable"
+          echo "2 failed, 14 passed in 3.42s"
+          exit 1
 
       - name: Done
         run: echo "CI succeeded"
