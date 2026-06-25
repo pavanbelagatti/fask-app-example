@@ -18,6 +18,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Simulate failure
+        run: exit 1
+
       - name: Checkout
         uses: actions/checkout@v4
 
