@@ -1,0 +1,36 @@
+name: Report CI to Port
+
+on:
+  workflow_run:
+    workflows: ["*"]
+    types: [completed]
+
+jobs:
+  report-to-port:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report workflow run to Port
+        uses: port-labs/port-github-action@v1
+        with:
+          clientId: ${{ secrets.PORT_CLIENT_ID }}
+          clientSecret: ${{ secrets.PORT_CLIENT_SECRET }}
+          baseUrl: https://api.port.io
+          operation: UPSERT
+          identifier: "${{ github.event.workflow_run.id }}"
+          blueprint: workflow_run
+          properties: |
+            {
+              "workflow_name": "${{ github.event.workflow_run.name }}",
+              "status": "${{ github.event.workflow_run.status }}",
+              "conclusion": "${{ github.event.workflow_run.conclusion }}",
+              "branch": "${{ github.event.workflow_run.head_branch }}",
+              "commit_sha": "${{ github.event.workflow_run.head_sha }}",
+              "commit_message": "${{ github.event.workflow_run.head_commit.message }}",
+              "actor": "${{ github.event.workflow_run.actor.login }}",
+              "run_number": ${{ github.event.workflow_run.run_number }},
+              "run_url": "${{ github.event.workflow_run.html_url }}",
+              "started_at": "${{ github.event.workflow_run.run_started_at }}",
+              "completed_at": "${{ github.event.workflow_run.updated_at }}",
+              "attempt": ${{ github.event.workflow_run.run_attempt }},
+              "event": "${{ github.event.workflow_run.event }}"
+            }
