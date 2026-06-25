@@ -2,3 +2,5 @@
 Simple flask application that prints 'Hello world!'. With simple test added. 
 
 Adding automation step
+
+simulate CI failure
