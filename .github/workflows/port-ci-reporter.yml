@@ -2,7 +2,7 @@ name: Report CI to Port
 
 on:
   workflow_run:
-    workflows: ["*"]
+    workflows: ["CI"]
     types: [completed]
 
 jobs:
