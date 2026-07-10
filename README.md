@@ -6,6 +6,6 @@ Added confirmed. Thanks to Port Automations.
 Added Slack integration too. Trying agentic engineering. 
 Thanks to Port, the new age agentic SDLC platform. 
 
-Adding SDLC automation. 
+Showing Port Demo
 
-Showing a simple demo
+
